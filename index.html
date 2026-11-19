@@ -380,6 +380,7 @@ function syncViewer() {
     get('close').focus();
   } else {
     pointers.clear();
+    previousTouch = null;
   }
 }
 
@@ -395,12 +396,15 @@ get('close').addEventListener('click', event => {
   closeViewer();
 });
 largeMap.addEventListener('load', fit);
-window.addEventListener('resize', () => { if (window.location.hash === '#viewer') fit(); });
+const stageSize = new ResizeObserver(() => {
+  if (window.location.hash === '#viewer' && !previousTouch) fit();
+});
+stageSize.observe(stage);
 get('fit').addEventListener('click', fit);
 get('out').addEventListener('click', () => zoomBy(1 / 1.5));
 get('in').addEventListener('click', () => zoomBy(1.5));
 stage.addEventListener('pointerdown', event => {
-  if (pointers.size >= 2 || event.button !== 0) return;
+  if (event.pointerType === 'touch' || pointers.size >= 2 || event.button !== 0) return;
   stage.setPointerCapture(event.pointerId);
   pointers.set(event.pointerId, point(event));
 });
@@ -415,6 +419,34 @@ stage.addEventListener('pointermove', event => {
 for (const event of ['pointerup', 'pointercancel', 'lostpointercapture']) {
   stage.addEventListener(event, input => pointers.delete(input.pointerId));
 }
+function touchGesture(touches) {
+  if (!touches.length) return null;
+  const first = point(touches[0]);
+  if (touches.length === 1) return {center: first, distance: 0};
+  const second = point(touches[1]);
+  return {
+    center: {x: (first.x + second.x) / 2, y: (first.y + second.y) / 2},
+    distance: Math.hypot(first.x - second.x, first.y - second.y)
+  };
+}
+
+let previousTouch = null;
+for (const name of ['touchstart', 'touchend', 'touchcancel']) {
+  stage.addEventListener(name, event => {
+    previousTouch = touchGesture(event.targetTouches);
+  });
+}
+stage.addEventListener('touchmove', event => {
+  if (event.cancelable) event.preventDefault();
+  const next = touchGesture(event.targetTouches);
+  if (previousTouch && next) {
+    const ratio = previousTouch.distance > 0 && next.distance > 0
+      ? next.distance / previousTouch.distance : 1;
+    zoomAt(zoom * ratio, previousTouch.center, next.center);
+  }
+  previousTouch = next;
+}, {passive: false});
+
 stage.addEventListener('wheel', event => {
   event.preventDefault();
   zoomAt(zoom * Math.exp(-event.deltaY * .002), point(event));
