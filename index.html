@@ -47,10 +47,10 @@ dd{margin:0}
 .viewer-bar .controls{margin:0}
 .viewer-bar a{background:white;border-radius:10px;padding:10px;font-weight:700;text-decoration:none}
 .viewer-bar button{color:#3d146c;padding:4px 10px}
-#stage{position:relative;flex:1;min-height:0;overflow:hidden;touch-action:none;cursor:grab;margin-bottom:env(safe-area-inset-bottom)}
+#stage{position:relative;isolation:isolate;background:#eae3f4;flex:1;min-height:0;overflow:hidden;touch-action:none;overscroll-behavior:none;-webkit-user-select:none;user-select:none;cursor:grab;margin-bottom:env(safe-area-inset-bottom)}
 #stage:active{cursor:grabbing}
 #large-map{position:absolute;top:0;left:0;max-width:none;transform-origin:0 0;pointer-events:none;user-select:none}
-#large-map:not([style]){width:100%;height:100%;object-fit:contain}
+#large-map:not([data-fitted]){width:100%;height:100%;object-fit:contain}
 </style>
 </head>
 <body>
@@ -94,6 +94,7 @@ dd{margin:0}
 <button type="button" id="out" aria-label="Zoom out">−</button>
 <button type="button" id="fit">Fit</button>
 <button type="button" id="in" aria-label="Zoom in">+</button>
+<a id="native-map" target="_blank" rel="noopener">Safari zoom</a>
 <a id="close" href="#map-preview">Close</a>
 </div>
 </div>
@@ -264,6 +265,7 @@ function showMap(station) {
     ? memphisAirportImage
     : get(key).content.textContent;
   get('large-map').src = map.src;
+  get('native-map').href = '?image=' + encodeURIComponent(key);
   get('source').href = selected.url;
 }
 
@@ -319,6 +321,8 @@ let fitScale = 0;
 let zoom = 1;
 let left = 0;
 let top = 0;
+let frameWidth = 0;
+let frameHeight = 0;
 
 function boundOffset(offset, frame, image) {
   if (image <= frame) return (frame - image) / 2;
@@ -334,12 +338,30 @@ function draw() {
   get('in').disabled = zoom >= maxZoom;
 }
 
-function fit() {
-  if (!largeMap.naturalWidth || !stage.clientHeight) return;
-  fitScale = Math.min(stage.clientWidth / largeMap.naturalWidth,
-    stage.clientHeight / largeMap.naturalHeight);
-  zoom = 1;
+function sizeMap(reset = false) {
+  const width = stage.clientWidth;
+  const height = stage.clientHeight;
+  if (!largeMap.naturalWidth || !width || !height) return;
+  const nextScale = Math.min(width / largeMap.naturalWidth, height / largeMap.naturalHeight);
+  if (!reset && fitScale && width === frameWidth && height === frameHeight) return;
+  if (!reset && fitScale) {
+    const ratio = nextScale / fitScale;
+    left = width / 2 - (frameWidth / 2 - left) * ratio;
+    top = height / 2 - (frameHeight / 2 - top) * ratio;
+  } else {
+    zoom = 1;
+  }
+  frameWidth = width;
+  frameHeight = height;
+  fitScale = nextScale;
+  largeMap.style.width = largeMap.naturalWidth + 'px';
+  largeMap.style.height = largeMap.naturalHeight + 'px';
+  largeMap.dataset.fitted = '';
   draw();
+}
+
+function fit() {
+  sizeMap(true);
 }
 
 function zoomAt(value, from, to = from) {
@@ -397,7 +419,7 @@ get('close').addEventListener('click', event => {
 });
 largeMap.addEventListener('load', fit);
 const stageSize = new ResizeObserver(() => {
-  if (window.location.hash === '#viewer' && !previousTouch) fit();
+  if (window.location.hash === '#viewer') sizeMap();
 });
 stageSize.observe(stage);
 get('fit').addEventListener('click', fit);
@@ -464,8 +486,20 @@ viewer.addEventListener('keydown', event => {
   }
 });
 
-filterStations();
-if (window.location.hash === '#viewer') syncViewer();
+const imageKey = new URLSearchParams(window.location.search).get('image');
+const imageStation = stations.find(station => imageKey === station.code + '-airport' ||
+  (station.maps.ramp && imageKey === station.code + '-ramp'));
+if (imageStation) {
+  const image = document.createElement('img');
+  const imageType = imageKey.endsWith('-airport') ? 'airport' : 'ramp';
+  image.alt = imageStation.code + ' · ' + imageStation.maps[imageType].title;
+  image.src = imageKey === 'MEM-airport' ? memphisAirportImage : get(imageKey).content.textContent;
+  image.style.cssText = 'display:block;width:100%;height:auto';
+  document.body.replaceChildren(image);
+} else {
+  filterStations();
+  if (window.location.hash === '#viewer') syncViewer();
+}
 </script>
 </body>
 </html>
