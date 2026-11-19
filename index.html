@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#0a1220">
+<title>Ramp &amp; Airport Maps</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at top,#1c3148,#0a1220 680px);color:#eff5fc;font:16px system-ui,sans-serif;min-height:100vh}
+main{width:min(1060px,100% - 32px);margin:auto;padding:46px 0}h1{font-size:clamp(2rem,6vw,3.5rem);letter-spacing:-.05em;margin:0}p{color:#bdcddd;line-height:1.55}header p{margin:8px 0 24px}.filters{display:flex;flex-wrap:wrap;gap:12px;margin:24px 0 12px}.filters label{display:grid;gap:6px;font-weight:650;flex:1;min-width:min(220px,100%)}
+input,select{background:#101e2e;color:inherit;border:1px solid #638098;border-radius:10px;padding:11px;font:inherit;color-scheme:dark}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,295px),1fr));gap:16px}.card{display:flex;flex-direction:column;background:#112033;border:1px solid #426880;border-top:2px solid #5cbfe2;border-radius:16px;padding:18px}
+h2{margin:3px 0 0;font-size:1.45rem}h3{margin:0;font-size:1rem}.code{color:#82dbf4;font-size:.8rem;letter-spacing:.15em;font-weight:800}.links{display:grid;gap:10px;margin-top:auto}.links a{display:block;padding:10px 12px;border:1px solid #51758e;border-radius:8px;color:#ddf5ff;text-decoration:none}.links a:hover{background:#1e3c52}.links a.primary{background:#a1e9fb;color:#092436;border-color:#a1e9fb;font-weight:700}.card p{font-size:.92rem;margin:10px 0 16px}.tag{font-size:.78rem;color:#f8d88c;margin:8px 0 0}footer{margin-top:22px;font-size:.85rem;color:#bdcddd}footer a{color:#a1e9fb}:focus-visible{outline:2px solid #f8d88c;outline-offset:3px}
+.tower{margin:0 0 16px;padding:10px 12px;background:#0b1929;border:1px solid #385e79;border-radius:10px}
+.tower summary{cursor:pointer;font-weight:700}.tower dl{display:grid;grid-template-columns:auto 1fr;column-gap:12px;row-gap:7px;font-size:.86rem}
+.tower dt{color:#82dbf4;font-weight:750;font-variant-numeric:tabular-nums}.tower dd{margin:0;color:#c9d8e7}.tower a{font-size:.8rem;color:#a1e9fb}
+</style>
+<main>
+<header><h1>Ramp &amp; Airport Maps</h1><p>Find airport diagrams and public FedEx ramp references by station.</p></header>
+<div class="filters">
+<label>Search stations<input id="search" type="search" placeholder="Airport code or city"></label>
+<label>Map type<select id="kind"><option value="all">All map types</option><option value="spot">Ramp spot diagram</option><option value="surface">Airport surface map</option><option value="planning">Cargo or planning map</option></select></label>
+</div>
+<p id="count" role="status"></p>
+<section id="stations" class="grid" aria-label="Airport stations"></section>
+<footer>Public reference collection. Planning and archived documents may show earlier layouts. Tower listings are a November 2026 snapshot. Use current official publications and assigned frequencies for operations. <a href="https://www.faa.gov/air_traffic/flight_info/aeronav/digital_products/dtpp/">FAA airport diagram directory</a></footer>
+</main>
+<script src="stations.js" defer></script>
+<script src="app.js" defer></script>
+</html>
